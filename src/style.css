@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+:root {
+  font-family: 'Nunito', sans-serif; /* Softie/Round font for body */
+  background-color: #FDFBF7; /* Traditional cream paper color */
+  color: #334155; /* Soft Slate text (not harsh black) */
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
