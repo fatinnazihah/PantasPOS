@@ -329,7 +329,7 @@
         class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start"
       >
         <div
-          class="md:col-span-2 grid grid-cols-2 lg:grid-cols-3 gap-4 h-[65vh] overflow-y-auto pr-2 pb-10"
+          class="md:col-span-2 grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 h-[65vh] overflow-y-auto pr-2 pb-10"
         >
           <div
             class="col-span-full flex items-center gap-2 mb-2 overflow-x-auto py-4 scrollbar-hide"
@@ -341,7 +341,7 @@
                   ? 'bg-[#800020] text-white shadow-lg shadow-rose-900/20'
                   : 'text-slate-500 hover:text-[#800020]'
               "
-              class="px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 border border-transparent"
+              class="px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 border border-transparent active:scale-95"
             >
               All
             </button>
@@ -354,7 +354,7 @@
                   ? 'bg-[#800020] text-white shadow-lg shadow-rose-900/20'
                   : 'text-slate-500 hover:text-[#800020]'
               "
-              class="px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 border border-transparent"
+              class="px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 border border-transparent active:scale-95"
             >
               {{ cat.name }}
             </button>
@@ -365,14 +365,24 @@
             :key="item.id"
             @click="addToCart(item)"
             :class="[
-              item.dailyStock < 5 && item.dailyStock > 0
-                ? 'ring-2 ring-red-100 bg-red-50/50'
-                : 'bg-white border-white',
               item.dailyStock <= 0
-                ? 'opacity-60 grayscale pointer-events-none cursor-not-allowed'
-                : 'cursor-pointer hover:scale-105',
+                ? 'opacity-60 grayscale pointer-events-none cursor-not-allowed bg-slate-100 border-transparent'
+                : 'bg-white border-white cursor-pointer',
+
+              // THE FLASH EFFECT:
+              // active:ring-4 adds the border ONLY when pressing down
+              // active:bg-rose-50 changes background color briefly
+              // active:scale-95 shrinks it slightly for tactile feel
+              item.dailyStock > 0
+                ? 'active:ring-4 active:ring-[#800020] active:bg-rose-50 active:scale-95 hover:scale-[1.02]'
+                : '',
+
+              // Low Stock Warning (Passive)
+              item.dailyStock > 0 && item.dailyStock < 5
+                ? 'ring-2 ring-red-100 bg-red-50/50'
+                : '',
             ]"
-            class="group p-4 rounded-[2rem] border shadow-[0_4px_20px_rgb(0,0,0,0.03)] flex flex-col justify-between transition-all relative overflow-hidden h-48"
+            class="group p-3 md:p-4 rounded-[2rem] border shadow-[0_4px_20px_rgb(0,0,0,0.03)] flex flex-col justify-between transition-all duration-75 relative overflow-hidden h-48 select-none"
           >
             <div
               v-if="item.imageUrl"
@@ -383,17 +393,26 @@
                 class="w-full h-full object-cover grayscale group-hover:grayscale-0"
               />
             </div>
+
+            <div
+              v-if="cart.some((c) => c.id === item.id)"
+              class="absolute top-2 right-2 text-xl animate-bounce z-20 pointer-events-none"
+            >
+              🍇
+            </div>
+
             <div class="relative z-10 flex justify-between items-start">
               <span
-                class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold uppercase"
+                class="text-[10px] bg-slate-100/90 backdrop-blur text-slate-500 px-2 py-0.5 rounded-full font-bold uppercase"
                 >{{ item.category }}</span
               >
               <p
-                class="font-black text-[#800020] bg-rose-50 px-3 py-1 rounded-full text-sm"
+                class="font-black text-[#800020] bg-rose-50 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm shadow-sm"
               >
                 RM{{ item.price }}
               </p>
             </div>
+
             <div class="relative z-10 mt-auto">
               <p
                 class="font-['Playfair_Display'] font-bold text-lg text-slate-800 leading-tight"
@@ -411,9 +430,7 @@
                 "
               >
                 {{
-                  item.dailyStock <= 0
-                    ? "SOLD OUT"
-                    : item.dailyStock + " left today"
+                  item.dailyStock <= 0 ? "SOLD OUT" : item.dailyStock + " left"
                 }}
               </p>
             </div>
@@ -421,7 +438,7 @@
         </div>
 
         <div
-          class="bg-white/90 backdrop-blur p-6 rounded-[2.5rem] shadow-xl border border-white h-fit sticky top-6"
+          class="bg-white/90 backdrop-blur p-6 rounded-[2.5rem] shadow-xl border border-white h-fit sticky top-6 mb-20 md:mb-0"
         >
           <h3
             class="font-['Playfair_Display'] font-bold text-xl mb-6 text-[#800020]"
@@ -434,18 +451,18 @@
           >
             Cart is empty
           </div>
-          <div v-else class="space-y-3 mb-6 max-h-[40vh] overflow-y-auto">
+          <div v-else class="space-y-3 mb-6 max-h-[40vh] overflow-y-auto pr-1">
             <div
               v-for="(item, index) in cart"
               :key="index"
-              class="flex justify-between items-center text-sm bg-slate-50 p-3 rounded-2xl"
+              class="flex justify-between items-center text-sm bg-slate-50 p-3 rounded-2xl animate-slide-up"
             >
               <span class="font-bold text-slate-700">{{ item.name }}</span>
               <div class="flex items-center gap-3">
                 <span class="font-mono text-slate-500">RM{{ item.price }}</span
                 ><button
                   @click="removeFromCart(index)"
-                  class="w-6 h-6 bg-red-100 text-red-500 rounded-full flex items-center justify-center font-bold hover:bg-red-200 transition"
+                  class="w-8 h-8 bg-red-100 text-red-500 rounded-full flex items-center justify-center font-bold hover:bg-red-200 transition active:scale-90"
                 >
                   x
                 </button>
@@ -949,18 +966,15 @@
               </p>
             </div>
           </div>
-
           <p class="text-slate-600 text-sm leading-relaxed mb-4">
             "{{ fb.message }}"
           </p>
-
           <div
             v-if="fb.imageUrl"
             class="rounded-2xl overflow-hidden mb-4 border border-slate-100"
           >
             <img :src="fb.imageUrl" class="w-full h-48 object-cover" />
           </div>
-
           <div
             class="flex items-center gap-2 text-rose-500 font-bold text-xs bg-rose-50 w-fit px-3 py-1 rounded-full"
           >

@@ -2,24 +2,29 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
+import { getAnalytics } from "firebase/analytics"; // Optional: if you use analytics
 
+// --- LOAD KEYS FROM .ENV FILE ---
 const firebaseConfig = {
-  // --- PASTE YOUR FIREBASE KEYS HERE ---
-  apiKey: "AIzaSyD5kaN0KzLd4pwEQb5WODAD6VNpWLoAHpg",
-  authDomain: "possystem-149d2.firebaseapp.com",
-  projectId: "possystem-149d2",
-  storageBucket: "possystem-149d2.firebasestorage.app",
-  messagingSenderId: "412304351173",
-  appId: "1:412304351173:web:683889f51c603d560735ac"
+  apiKey: import.meta.env.VITE_API_KEY,
+  authDomain: import.meta.env.VITE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_APP_ID,
+  measurementId: import.meta.env.VITE_MEASUREMENT_ID
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const auth = getAuth(app);
 
+// Initialize Analytics (Safe check: only if supported)
+// const analytics = getAnalytics(app); 
+
 // --- FEATURE: OFFLINE MODE ---
-// This keeps the app working even if booth WiFi dies.
 enableIndexedDbPersistence(db).catch((err) => {
   if (err.code == 'failed-precondition') {
     console.log('Persistence failed: Multiple tabs open.');
