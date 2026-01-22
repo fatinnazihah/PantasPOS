@@ -14,7 +14,7 @@
         <h1
           class="font-['Playfair_Display'] text-5xl font-black text-[#800020] tracking-wide mb-2 relative z-10 drop-shadow-sm"
         >
-          Nama Kedai
+          Ruang Sejenak
         </h1>
         <div
           class="absolute bottom-2 left-0 w-full h-3 bg-[#FEF9C3] -rotate-1 rounded-full -z-0"
@@ -31,7 +31,7 @@
       class="sticky top-0 z-40 bg-white/30 backdrop-blur-md border-b border-white/20 mb-6"
     >
       <div
-        class="max-w-5xl mx-auto px-4 overflow-x-auto py-4 scrollbar-hide flex gap-2 justify-start md:justify-center"
+        class="max-w-5xl mx-auto px-4 overflow-x-auto py-4 scrollbar-hide flex gap-2 justify-center"
       >
         <button
           @click="selectedCategory = 'All'"
@@ -44,7 +44,6 @@
         >
           All
         </button>
-
         <button
           v-for="cat in categories"
           :key="cat.id"
@@ -61,7 +60,7 @@
       </div>
     </div>
 
-    <div class="px-6 max-w-5xl mx-auto min-h-[50vh]">
+    <div class="px-4 md:px-6 max-w-5xl mx-auto min-h-[50vh]">
       <div
         v-if="filteredMenu.length === 0"
         class="text-center py-20 text-slate-400 font-bold italic"
@@ -69,14 +68,18 @@
         No items in this category yet. 🧁
       </div>
 
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div
+        v-else
+        class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-8"
+      >
         <div
           v-for="item in filteredMenu"
           :key="item.id"
-          class="group bg-white/60 backdrop-blur-sm rounded-[2.5rem] p-4 border border-white shadow-sm hover:shadow-xl hover:bg-white/90 transition-all duration-300 hover:-translate-y-1"
+          @click="openDetails(item)"
+          class="group bg-white/60 backdrop-blur-sm rounded-[2rem] p-3 md:p-4 border border-white shadow-sm hover:shadow-xl hover:bg-white/90 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
         >
           <div
-            class="relative aspect-square rounded-[2rem] overflow-hidden bg-[#FEF9C3] mb-4 shadow-inner"
+            class="relative aspect-square rounded-[1.5rem] overflow-hidden bg-[#FEF9C3] mb-3 shadow-inner"
           >
             <img
               v-if="item.imageUrl"
@@ -87,48 +90,42 @@
               v-else
               class="w-full h-full flex flex-col items-center justify-center text-yellow-500/30"
             >
-              <span class="text-5xl">🍪</span>
+              <span class="text-4xl md:text-5xl">🍪</span>
             </div>
             <div
-              class="absolute bottom-4 right-4 bg-white/95 backdrop-blur text-[#800020] px-4 py-2 rounded-full font-black shadow-lg text-sm border border-rose-100"
+              class="absolute bottom-2 right-2 md:bottom-4 md:right-4 bg-white/95 backdrop-blur text-[#800020] px-3 py-1 md:px-4 md:py-2 rounded-full font-black shadow-lg text-xs md:text-sm border border-rose-100"
             >
               RM {{ item.price }}
             </div>
           </div>
 
-          <div class="px-3 pb-3">
+          <div class="px-1 pb-1">
             <h3
-              class="font-['Playfair_Display'] font-bold text-2xl text-slate-800 mb-1 leading-tight group-hover:text-[#800020] transition-colors"
+              class="font-['Playfair_Display'] font-bold text-lg md:text-2xl text-slate-800 mb-1 leading-tight group-hover:text-[#800020] transition-colors truncate"
             >
               {{ item.name }}
             </h3>
 
             <div
-              class="flex justify-between items-end mt-4 pt-4 border-t border-slate-100/50"
+              class="flex flex-col md:flex-row justify-between items-start md:items-end mt-2 pt-2 border-t border-slate-100/50 gap-2 md:gap-0"
             >
-              <div class="flex flex-col">
-                <span
-                  class="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1"
-                  >Daily Stock</span
-                >
-                <span
-                  :class="
-                    item.dailyStock > 0
-                      ? 'text-green-600 bg-green-100/50 border-green-100'
-                      : 'text-red-500 bg-red-100/50 border-red-100'
-                  "
-                  class="text-xs px-3 py-1 rounded-lg font-bold w-fit border"
-                >
-                  {{
-                    item.dailyStock > 0 ? `${item.dailyStock} left` : "Sold Out"
-                  }}
-                </span>
-              </div>
+              <span
+                :class="
+                  item.dailyStock > 0
+                    ? 'text-green-600 bg-green-100/50 border-green-100'
+                    : 'text-red-500 bg-red-100/50 border-red-100'
+                "
+                class="text-[10px] px-2 py-1 rounded-lg font-bold w-fit border"
+              >
+                {{
+                  item.dailyStock > 0 ? `${item.dailyStock} left` : "Sold Out"
+                }}
+              </span>
 
               <button
                 v-if="item.dailyStock > 0"
-                @click="openReservation(item)"
-                class="bg-[#800020] text-white px-6 py-3 rounded-2xl text-xs font-bold shadow-lg shadow-rose-200 hover:bg-[#630330] hover:scale-105 active:scale-95 transition-all"
+                @click.stop="openReservation(item)"
+                class="w-full md:w-auto bg-[#800020] text-white px-4 py-2 rounded-xl text-[10px] md:text-xs font-bold shadow-lg shadow-rose-200 hover:bg-[#630330] hover:scale-105 active:scale-95 transition-all"
               >
                 Reserve
               </button>
@@ -137,6 +134,20 @@
         </div>
       </div>
     </div>
+
+    <button
+      @click="showTracker = true"
+      class="fixed bottom-28 right-8 bg-[#FEF9C3] text-yellow-800 pl-6 pr-8 py-4 rounded-full font-bold shadow-xl shadow-yellow-900/10 flex items-center gap-3 hover:scale-105 transition active:scale-95 z-50 border-4 border-white/50 backdrop-blur-sm group"
+    >
+      <span class="text-2xl group-hover:scale-110 transition">🔍</span>
+      <div class="text-left leading-none">
+        <span
+          class="block text-[10px] opacity-70 uppercase tracking-wider font-bold"
+          >Track</span
+        >
+        <span class="text-sm">Order</span>
+      </div>
+    </button>
 
     <button
       @click="showFeedbackModal = true"
@@ -151,6 +162,14 @@
         <span class="text-sm">Reviews</span>
       </div>
     </button>
+
+    <div
+      v-if="showTracker"
+      class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm transition-all"
+      @click.self="showTracker = false"
+    >
+      <OrderTracker @close="showTracker = false" />
+    </div>
 
     <div
       v-if="showFeedbackModal"
@@ -220,7 +239,6 @@
                 No reviews yet. Be the first!
               </p>
             </div>
-
             <div
               v-for="fb in feedbacks"
               :key="fb.id"
@@ -234,29 +252,24 @@
                 </div>
                 <div class="w-0.5 h-full bg-slate-100 my-2 rounded-full"></div>
               </div>
-
               <div class="flex-1 pb-4">
                 <div class="flex justify-between items-start">
                   <p class="font-bold text-slate-800 text-sm">{{ fb.name }}</p>
-                  <div class="flex items-center gap-2">
-                    <p class="text-xs text-slate-400">
-                      {{
-                        fb.timestamp
-                          ? new Date(
-                              fb.timestamp.seconds * 1000,
-                            ).toLocaleDateString()
-                          : "Now"
-                      }}
-                    </p>
-                  </div>
+                  <p class="text-xs text-slate-400">
+                    {{
+                      fb.timestamp
+                        ? new Date(
+                            fb.timestamp.seconds * 1000,
+                          ).toLocaleDateString()
+                        : "Now"
+                    }}
+                  </p>
                 </div>
-
                 <p
                   class="text-slate-700 text-[15px] mt-1 mb-3 leading-relaxed whitespace-pre-wrap"
                 >
                   {{ fb.message }}
                 </p>
-
                 <div v-if="fb.imageUrl" class="mb-3">
                   <img
                     :src="fb.imageUrl"
@@ -264,7 +277,6 @@
                     loading="lazy"
                   />
                 </div>
-
                 <button
                   @click="handleLike(fb)"
                   class="flex items-center gap-1.5 group transition-all w-fit"
@@ -308,7 +320,6 @@
                 </button>
               </div>
             </div>
-
             <div class="group relative">
               <input
                 v-model="feedback.name"
@@ -320,7 +331,6 @@
                 >Your Name</label
               >
             </div>
-
             <div class="group relative">
               <textarea
                 v-model="feedback.message"
@@ -332,7 +342,6 @@
                 >Your Review</label
               >
             </div>
-
             <label
               class="flex items-center justify-center w-full h-16 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer hover:bg-rose-50 hover:border-rose-200 transition group overflow-hidden relative"
             >
@@ -351,7 +360,6 @@
               </div>
               <input type="file" @change="handleFileUpload" class="hidden" />
             </label>
-
             <button
               @click="submitFeedback"
               :disabled="uploading"
@@ -359,6 +367,78 @@
             >
               <span v-if="uploading" class="animate-spin">⏳</span>
               {{ uploading ? "Posting..." : "Post Review" }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="showDetailsModal"
+      class="fixed inset-0 bg-[#800020]/20 backdrop-blur-sm flex items-center justify-center p-6 z-50 transition-opacity"
+      @click.self="showDetailsModal = false"
+    >
+      <div
+        class="bg-white rounded-[2.5rem] w-full max-w-sm shadow-2xl border-4 border-white transform transition-all scale-100 animate-slide-up overflow-hidden"
+      >
+        <div v-if="selectedItem?.imageUrl" class="relative h-64 bg-[#FEF9C3]">
+          <img
+            :src="selectedItem.imageUrl"
+            class="w-full h-full object-cover"
+          />
+          <button
+            @click="showDetailsModal = false"
+            class="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full text-slate-500 font-bold hover:text-red-500 flex items-center justify-center shadow-lg transition"
+          >
+            ✕
+          </button>
+        </div>
+        <div v-else class="flex justify-end p-4 pb-0">
+          <button
+            @click="showDetailsModal = false"
+            class="w-10 h-10 bg-slate-100 rounded-full text-slate-500 font-bold hover:text-red-500 flex items-center justify-center transition"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="p-8 pt-6">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3
+                class="font-['Playfair_Display'] font-bold text-3xl text-[#800020] leading-tight"
+              >
+                {{ selectedItem?.name }}
+              </h3>
+              <span
+                class="text-xs font-bold text-slate-400 uppercase tracking-widest"
+              >
+                {{ selectedItem?.category }}
+              </span>
+            </div>
+            <div
+              class="bg-rose-50 text-[#800020] px-3 py-1 rounded-xl font-black text-sm"
+            >
+              RM {{ selectedItem?.price }}
+            </div>
+          </div>
+
+          <p class="text-slate-600 text-sm leading-relaxed mb-6 font-medium">
+            {{
+              selectedItem?.description ||
+              "Delicious homemade goodness baked with love."
+            }}
+          </p>
+
+          <div class="flex gap-3">
+            <button
+              @click="
+                showDetailsModal = false;
+                openReservation(selectedItem);
+              "
+              class="flex-1 bg-[#800020] text-white py-4 rounded-2xl font-bold shadow-lg shadow-rose-200 hover:bg-[#630330] transition active:scale-95"
+            >
+              Reserve Now
             </button>
           </div>
         </div>
@@ -382,7 +462,6 @@
         >
           Confirm via WhatsApp
         </p>
-
         <div
           class="bg-[#FEF9C3]/50 border border-[#FEF9C3] p-4 rounded-2xl mb-6 flex items-center gap-4"
         >
@@ -400,7 +479,6 @@
             </p>
           </div>
         </div>
-
         <div class="space-y-3">
           <input
             v-model="reservation.customerName"
@@ -422,7 +500,6 @@
             />
           </div>
         </div>
-
         <div class="flex gap-3 mt-8">
           <button
             @click="showModal = false"
@@ -445,6 +522,7 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { db, storage } from "../firebase";
+import OrderTracker from "../components/OrderTracker.vue";
 import {
   collection,
   onSnapshot,
@@ -466,10 +544,12 @@ const menuItems = ref([]);
 const categories = ref([]);
 const feedbacks = ref([]);
 const selectedCategory = ref("All");
+const showTracker = ref(false);
 
 // Modals & Tabs
 const showModal = ref(false);
 const showFeedbackModal = ref(false);
+const showDetailsModal = ref(false); // NEW
 const feedbackTab = ref("read");
 
 // Forms
@@ -530,6 +610,12 @@ const filteredMenu = computed(() => {
   );
 });
 
+// NEW: Open Details
+const openDetails = (item) => {
+  selectedItem.value = item;
+  showDetailsModal.value = true;
+};
+
 const openReservation = (item) => {
   selectedItem.value = item;
   reservation.value.qty = 1;
@@ -548,7 +634,9 @@ const confirmReservation = async () => {
 
   const phone = "60102847208";
   const text = `Hi! My name is ${reservation.value.customerName}. I'd like to reserve ${reservation.value.qty}x ${selectedItem.value.name}.`;
-  window.location.href = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+  window.location.href = `https://wa.me/${phone}?text=${encodeURIComponent(
+    text,
+  )}`;
 };
 
 const handleFileUpload = (e) => {

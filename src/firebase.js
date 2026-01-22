@@ -1,10 +1,13 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
+import { 
+  initializeFirestore, 
+  persistentLocalCache, 
+  persistentMultipleTabManager 
+} from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
-import { getAnalytics } from "firebase/analytics"; // Optional: if you use analytics
 
-// LOAD KEYS FROM .ENV FILE
+// --- LOAD KEYS FROM .ENV FILE ---
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_API_KEY,
   authDomain: import.meta.env.VITE_AUTH_DOMAIN,
@@ -17,18 +20,14 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+
+// --- NEW METHOD: Initialize Firestore WITH Persistence Settings ---
+// This replaces both getFirestore(app) and enableIndexedDbPersistence(db)
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager() // Enables multi-tab support
+  })
+});
+
 export const storage = getStorage(app);
 export const auth = getAuth(app);
-
-// Initialize Analytics (Safe check: only if supported)
-// const analytics = getAnalytics(app); 
-
-// --- FEATURE: OFFLINE MODE ---
-enableIndexedDbPersistence(db).catch((err) => {
-  if (err.code == 'failed-precondition') {
-    console.log('Persistence failed: Multiple tabs open.');
-  } else if (err.code == 'unimplemented') {
-    console.log('Persistence is not available in this browser.');
-  }
-});

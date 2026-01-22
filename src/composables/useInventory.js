@@ -5,36 +5,41 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage
 
 export function useInventory() {
   const menu = ref([]);
-  const categories = ref([]); // Dynamic Categories
+  const categories = ref([]);
   const formMode = ref("add");
   const editingId = ref(null);
-  const newItem = ref({ name: "", price: "", stock: "", dailyStock: "", category: "", file: null });
+  
+  // ADDED: description field
+  const newItem = ref({ 
+    name: "", 
+    price: "", 
+    stock: "", 
+    dailyStock: "", 
+    category: "", 
+    description: "", 
+    file: null 
+  });
+  
   const previewImage = ref(null);
   const selectedCategory = ref("all");
 
   onMounted(() => {
-    // 1. Load Menu
     onSnapshot(collection(db, "menu"), (snap) => {
       menu.value = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     });
 
-    // 2. Load Categories (Sorted Alphabetically)
     const catQuery = query(collection(db, "categories"), orderBy("name", "asc"));
     onSnapshot(catQuery, (snap) => {
       categories.value = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     });
   });
 
-  // --- CATEGORY LOGIC ---
   const addCategory = async (name) => {
     if(!name) return;
-    // Check duplicates
     if(categories.value.some(c => c.name.toLowerCase() === name.toLowerCase())) return alert("Category exists");
-    
     await addDoc(collection(db, "categories"), { name: name });
   };
 
-  // --- EXISTING LOGIC ---
   const filteredMenu = computed(() => {
     if (selectedCategory.value === 'all') return menu.value;
     return menu.value.filter(item => item.category === selectedCategory.value);
@@ -63,6 +68,7 @@ export function useInventory() {
       stock: Number(newItem.value.stock),
       dailyStock: Number(newItem.value.dailyStock),
       category: newItem.value.category || "General",
+      description: newItem.value.description || "", // ADDED: Save description
       imageUrl,
     };
 
@@ -78,7 +84,12 @@ export function useInventory() {
   const editItem = (item) => {
     formMode.value = 'edit';
     editingId.value = item.id;
-    newItem.value = { ...item, file: null }; 
+    // ADDED: Load existing description
+    newItem.value = { 
+      ...item, 
+      description: item.description || "", 
+      file: null 
+    }; 
     previewImage.value = item.imageUrl;
   };
 
@@ -91,7 +102,16 @@ export function useInventory() {
   const resetForm = () => {
     formMode.value = 'add';
     editingId.value = null;
-    newItem.value = { name: "", price: "", stock: "", dailyStock: "", category: "", file: null };
+    // ADDED: Reset description
+    newItem.value = { 
+      name: "", 
+      price: "", 
+      stock: "", 
+      dailyStock: "", 
+      category: "", 
+      description: "", 
+      file: null 
+    };
     previewImage.value = null;
   };
 

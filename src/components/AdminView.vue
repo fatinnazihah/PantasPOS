@@ -329,7 +329,7 @@
         class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start"
       >
         <div
-          class="md:col-span-2 grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 h-[65vh] overflow-y-auto pr-2 pb-10"
+          class="md:col-span-2 grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 h-[65vh] overflow-y-auto pr-2 pb-64 md:pb-10"
         >
           <div
             class="col-span-full flex items-center gap-2 mb-2 overflow-x-auto py-4 scrollbar-hide"
@@ -369,15 +369,12 @@
                 ? 'opacity-60 grayscale pointer-events-none cursor-not-allowed bg-slate-100 border-transparent'
                 : 'bg-white border-white cursor-pointer',
 
-              // THE FLASH EFFECT:
-              // active:ring-4 adds the border ONLY when pressing down
-              // active:bg-rose-50 changes background color briefly
-              // active:scale-95 shrinks it slightly for tactile feel
+              // Flash Effect
               item.dailyStock > 0
                 ? 'active:ring-4 active:ring-[#800020] active:bg-rose-50 active:scale-95 hover:scale-[1.02]'
                 : '',
 
-              // Low Stock Warning (Passive)
+              // Low Stock Warning
               item.dailyStock > 0 && item.dailyStock < 5
                 ? 'ring-2 ring-red-100 bg-red-50/50'
                 : '',
@@ -430,7 +427,9 @@
                 "
               >
                 {{
-                  item.dailyStock <= 0 ? "SOLD OUT" : item.dailyStock + " left"
+                  item.dailyStock <= 0
+                    ? "SOLD OUT"
+                    : item.dailyStock + " left today"
                 }}
               </p>
             </div>
@@ -438,52 +437,71 @@
         </div>
 
         <div
-          class="bg-white/90 backdrop-blur p-6 rounded-[2.5rem] shadow-xl border border-white h-fit sticky top-6 mb-20 md:mb-0"
+          class="bg-white/95 backdrop-blur-md p-5 md:p-6 rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-[0_-8px_30px_rgba(0,0,0,0.12)] md:shadow-xl border-t border-slate-200 md:border md:border-white fixed bottom-0 left-0 right-0 z-50 md:static md:h-fit md:sticky md:top-6 transition-all duration-300"
         >
+          <div
+            class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"
+          ></div>
+
           <h3
-            class="font-['Playfair_Display'] font-bold text-xl mb-6 text-[#800020]"
+            class="font-['Playfair_Display'] font-bold text-xl mb-4 text-[#800020] hidden md:block"
           >
             Current Order
           </h3>
+
           <div
             v-if="cart.length === 0"
-            class="text-slate-300 text-center py-12 italic border-2 border-dashed border-slate-100 rounded-2xl"
+            class="text-slate-300 text-center py-6 italic border-2 border-dashed border-slate-100 rounded-2xl mb-4 hidden md:block"
           >
             Cart is empty
           </div>
-          <div v-else class="space-y-3 mb-6 max-h-[40vh] overflow-y-auto pr-1">
+
+          <div
+            v-else
+            class="space-y-3 mb-4 max-h-[25vh] md:max-h-[40vh] overflow-y-auto pr-1 scrollbar-hide md:scrollbar-default"
+          >
             <div
               v-for="(item, index) in cart"
               :key="index"
               class="flex justify-between items-center text-sm bg-slate-50 p-3 rounded-2xl animate-slide-up"
             >
-              <span class="font-bold text-slate-700">{{ item.name }}</span>
-              <div class="flex items-center gap-3">
-                <span class="font-mono text-slate-500">RM{{ item.price }}</span
-                ><button
+              <span class="font-bold text-slate-700 truncate mr-2">{{
+                item.name
+              }}</span>
+              <div class="flex items-center gap-3 shrink-0">
+                <span class="font-mono text-slate-500">RM{{ item.price }}</span>
+                <button
                   @click="removeFromCart(index)"
-                  class="w-8 h-8 bg-red-100 text-red-500 rounded-full flex items-center justify-center font-bold hover:bg-red-200 transition active:scale-90"
+                  class="w-7 h-7 bg-red-100 text-red-500 rounded-full flex items-center justify-center font-bold hover:bg-red-200 transition active:scale-90"
                 >
                   x
                 </button>
               </div>
             </div>
           </div>
+
           <div v-if="cart.length > 0">
             <div
-              class="flex justify-between py-4 text-2xl font-['Playfair_Display'] font-black text-[#800020] border-t border-slate-100"
+              class="flex justify-between py-2 md:py-4 text-xl md:text-2xl font-['Playfair_Display'] font-black text-[#800020] border-t border-slate-100 mb-2"
             >
               <span>Total</span><span>RM {{ cartTotal }}</span>
             </div>
             <button
               @click="handleCheckout"
-              class="w-full bg-[#800020] hover:bg-[#600015] text-white py-4 rounded-2xl font-bold shadow-lg shadow-rose-200 transition active:scale-95 flex flex-col items-center"
+              class="w-full bg-[#800020] hover:bg-[#600015] text-white py-3 md:py-4 rounded-2xl font-bold shadow-lg shadow-rose-200 transition active:scale-95 flex flex-col items-center"
             >
-              <span>Confirm & Send</span
-              ><span class="text-[10px] opacity-80 uppercase tracking-widest"
+              <span>Confirm & Send</span>
+              <span class="text-[10px] opacity-80 uppercase tracking-widest"
                 >To Kitchen</span
               >
             </button>
+          </div>
+
+          <div
+            v-else
+            class="md:hidden text-center text-slate-400 text-sm py-2 font-bold"
+          >
+            Start adding items...
           </div>
         </div>
       </div>
@@ -526,6 +544,13 @@
               placeholder="Item Name"
               class="w-full bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-[#800020]/20 transition"
             />
+            <div class="space-y-4">
+              <textarea
+                v-model="newItem.description"
+                placeholder="Product Description (e.g. Contains nuts, spicy...)"
+                class="w-full bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-[#800020]/20 transition text-sm font-medium resize-none h-24"
+              ></textarea>
+            </div>
             <div class="flex gap-2">
               <div class="relative w-1/2">
                 <select
@@ -859,7 +884,8 @@
               <tr
                 class="text-xs text-slate-400 uppercase border-b border-slate-100"
               >
-                <th class="pb-3 pl-4">Date</th>
+                <th class="pb-3 pl-4">Order ID</th>
+                <th class="pb-3">Date</th>
                 <th class="pb-3">Time</th>
                 <th class="pb-3">Items</th>
                 <th class="pb-3">Total</th>
@@ -873,9 +899,16 @@
                 :key="order.id"
                 class="border-b border-slate-50 hover:bg-slate-50 transition"
               >
-                <td class="py-4 pl-4 text-sm font-bold text-slate-500">
-                  {{ order.date || "Today" }}
+                <td
+                  class="py-4 pl-4 text-xs font-mono font-bold text-slate-400"
+                >
+                  #{{ order.id.slice(0, 6).toUpperCase() }}
                 </td>
+
+                <td class="py-4 text-sm font-bold text-slate-500">
+                  {{ order.orderDate || "Today" }}
+                </td>
+
                 <td class="py-4 text-sm font-bold text-slate-700">
                   {{
                     order.timestamp
@@ -888,25 +921,41 @@
                       : "..."
                   }}
                 </td>
+
                 <td class="py-4 text-sm">
-                  <div v-for="i in order.items" :key="i" class="text-slate-600">
-                    {{ i }}
+                  <div
+                    v-for="(item, idx) in order.items"
+                    :key="idx"
+                    class="text-slate-600"
+                  >
+                    {{ item.name }}
+                    <span class="text-slate-400 text-xs" v-if="item.qty > 1"
+                      >x{{ item.qty }}</span
+                    >
                   </div>
                 </td>
+
                 <td class="py-4 font-mono font-bold text-[#800020]">
                   RM{{ order.total }}
                 </td>
+
                 <td class="py-4">
                   <span
                     class="text-[10px] px-2 py-1 rounded-full font-bold uppercase"
-                    :class="
-                      order.status === 'completed'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-yellow-100 text-yellow-700'
-                    "
-                    >{{ order.status }}</span
+                    :class="{
+                      'bg-green-100 text-green-700':
+                        order.status === 'completed' ||
+                        order.status === 'ready',
+                      'bg-yellow-100 text-yellow-700':
+                        order.status === 'pending' ||
+                        order.status === 'preparing',
+                      'bg-gray-100 text-gray-500': order.status === 'void',
+                    }"
                   >
+                    {{ order.status }}
+                  </span>
                 </td>
+
                 <td class="py-4 text-right pr-4">
                   <button
                     @click="handleDeleteOrder(order.id)"
@@ -920,7 +969,6 @@
           </table>
         </div>
       </div>
-
       <div
         v-if="currentTab === 'reviews'"
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"

@@ -1,6 +1,15 @@
 import { ref, computed, onMounted } from "vue";
 import { db } from "../firebase";
-import { collection, addDoc, updateDoc, doc, increment, onSnapshot, serverTimestamp } from "firebase/firestore";
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  doc, 
+  increment, 
+  onSnapshot, 
+  runTransaction, 
+  serverTimestamp 
+} from "firebase/firestore";
 
 export function usePos() {
   const cart = ref([]);
@@ -40,34 +49,69 @@ export function usePos() {
     cart.value.reduce((acc, item) => acc + Number(item.price), 0)
   );
 
-  const processCheckout = async () => {
-    if (cart.value.length === 0) return;
+  // Helper: Generates a 1-up number that resets daily
+    const getDailyQueueNumber = async () => {
+    const todayStr = new Date().toISOString().split('T')[0]; // "2025-01-22"
+    const counterRef = doc(db, 'counters', 'daily_queue'); // Dedicated counter doc
 
-    // 1. Create Order
-    await addDoc(collection(db, "orders"), {
-      items: cart.value.map((i) => i.name),
-      total: cartTotal.value,
-      status: "pending",
-      timestamp: serverTimestamp(),
-      date: new Date().toLocaleDateString('en-GB')
-    });
+    try {
+        const newQ = await runTransaction(db, async (transaction) => {
+        const sfDoc = await transaction.get(counterRef);
+        
+        let nextNum = 1;
+        
+        if (sfDoc.exists()) {
+            const data = sfDoc.data();
+            // If the date stored matches today, increment. Otherwise, reset to 1.
+            if (data.date === todayStr) {
+            nextNum = data.current + 1;
+            }
+        }
 
-    // 2. Decrement Stock in Database
-    // We use a Map to handle duplicates efficiently (e.g. if you sold 3x Cookies)
-    const itemCounts = {};
-    cart.value.forEach(item => {
-      itemCounts[item.id] = (itemCounts[item.id] || 0) + 1;
-    });
+        // Update the counter doc
+        transaction.set(counterRef, { 
+            current: nextNum, 
+            date: todayStr 
+        });
 
-    for (const [id, count] of Object.entries(itemCounts)) {
-      await updateDoc(doc(db, "menu", id), {
-        stock: increment(-count),      // Reduce Total Stock
-        dailyStock: increment(-count)  // Reduce Daily Stock
-      });
+        return nextNum;
+        });
+        return newQ;
+    } catch (e) {
+        console.error("Queue Gen Error:", e);
+        return null; // Fallback
     }
+    };
 
-    cart.value = [];
-  };
+  const processCheckout = async () => {
+    if (cart.value.length === 0) return false;
+
+    // 1. Generate the Queue Number
+    const queueNum = await getDailyQueueNumber();
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    const newOrder = {
+        items: cart.value,
+        total: cartTotal.value,
+        status: 'pending', // pending -> preparing -> ready -> completed
+        paymentMethod: 'cash',
+        timestamp: serverTimestamp(),
+        
+        // NEW FIELDS
+        queueNumber: queueNum, 
+        orderDate: todayStr, // Helps us filter "today's" orders
+    };
+
+    try {
+        await addDoc(collection(db, 'orders'), newOrder);
+        cart.value = []; // Clear cart
+        return true;
+    } catch (e) {
+        console.error(e);
+        return false;
+    }
+    };
 
   return { cart, totalSales, totalItemsSold, addToCart, removeFromCart, cartTotal, processCheckout };
+
 }

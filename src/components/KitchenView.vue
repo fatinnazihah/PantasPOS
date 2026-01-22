@@ -56,28 +56,40 @@
         class="bg-white/90 backdrop-blur-sm rounded-[2rem] overflow-hidden flex flex-col shadow-xl border-2 border-white hover:-translate-y-1 transition-all duration-300 animate-slide-up"
       >
         <div
-          class="p-5 bg-slate-50 flex justify-between items-center border-b border-slate-100"
+          class="p-5 bg-slate-50 flex justify-between items-start border-b border-slate-100"
         >
           <div>
             <span
               class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5"
-              >Order ID</span
+              >Queue Number</span
             >
             <span
-              class="font-mono text-xl font-black text-[#800020] tracking-widest"
-              >#{{ order.id.slice(0, 5).toUpperCase() }}</span
+              class="font-mono text-4xl font-black text-[#800020] tracking-widest"
             >
+              #{{ order.queueNumber }}
+            </span>
+            <div class="mt-1 flex items-center gap-1">
+              <span class="text-[9px] text-slate-400 uppercase font-bold"
+                >ID:</span
+              >
+              <span class="font-mono text-[10px] text-slate-500">{{
+                order.id.slice(0, 6).toUpperCase()
+              }}</span>
+            </div>
           </div>
           <div class="text-right">
             <span
               class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5"
-              >Time In</span
+              >Date & Time</span
             >
-            <span
-              class="text-sm font-bold text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-lg"
+            <div
+              class="flex flex-col items-end text-sm font-bold text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-lg"
             >
-              {{ formatTime(order.timestamp) }}
-            </span>
+              <span>{{ order.orderDate }}</span>
+              <span class="text-xs text-slate-500">{{
+                formatTime(order.timestamp)
+              }}</span>
+            </div>
           </div>
         </div>
 
@@ -97,19 +109,19 @@
               </div>
               <span
                 class="text-lg font-bold text-slate-700 leading-tight group-hover:text-[#800020] transition"
-                >{{ item }}</span
               >
+                {{ item.name }}
+              </span>
             </li>
           </ul>
         </div>
 
         <div class="p-4 bg-white border-t border-slate-50">
           <button
-            @click="markComplete(order.id)"
+            @click="markReady(order.id)"
             class="w-full py-4 bg-[#800020] hover:bg-[#600015] text-white rounded-2xl font-bold text-sm tracking-widest uppercase shadow-lg shadow-rose-200 hover:shadow-rose-300 transition active:scale-95 flex items-center justify-center gap-2"
           >
             <span>Mark Ready</span>
-            <span>✅</span>
           </button>
         </div>
       </div>
@@ -143,7 +155,6 @@ onMounted(() => {
   }, 1000);
 
   // Real-time listener for Pending Orders
-  // Ordered by oldest first (FIFO - First In, First Out)
   const q = query(
     collection(db, "orders"),
     where("status", "==", "pending"),
@@ -155,9 +166,10 @@ onMounted(() => {
   });
 });
 
-const markComplete = async (id) => {
+const markReady = async (id) => {
   if (confirm("Is this order packed and ready?")) {
-    await updateDoc(doc(db, "orders", id), { status: "completed" });
+    // Sets status to 'ready' so it disappears from here but shows on Customer Tracker
+    await updateDoc(doc(db, "orders", id), { status: "ready" });
   }
 };
 
