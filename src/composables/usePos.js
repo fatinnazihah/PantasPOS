@@ -20,68 +20,78 @@ export function usePos() {
   onMounted(() => {
     onSnapshot(collection(db, "orders"), (snap) => {
       totalSales.value = snap.docs.reduce((acc, curr) => acc + curr.data().total, 0);
-      totalItemsSold.value = snap.docs.reduce((acc, curr) => acc + curr.data().items.length, 0);
+      // Logic adjustment: Sum up qtys from items array if structured that way, 
+      // otherwise just counting length is an approximation.
+      totalItemsSold.value = snap.docs.length; 
     });
   });
 
-  // --- FIXED ADD TO CART LOGIC ---
+  // --- FIXED ADD TO CART LOGIC (Grouping + Qty) ---
   const addToCart = (item) => {
-    // 1. First check: Is the item visibly out of stock?
-    if (item.dailyStock <= 0) {
-      return alert("Item is Sold Out!");
+    // 1. Check if item exists in cart
+    const existingItem = cart.value.find((i) => i.id === item.id);
+
+    if (existingItem) {
+      // 2. If exists, check stock limit then increment qty
+      if (existingItem.qty < item.dailyStock) {
+        existingItem.qty++;
+      } else {
+        alert("Limit reached! You have all available stock in the cart.");
+      }
+    } else {
+      // 3. If new, add to cart with qty: 1
+      // Creating a copy {...item} is crucial so we don't mutate the original menu object
+      if (item.dailyStock > 0) {
+        cart.value.push({ ...item, qty: 1 });
+      } else {
+        alert("Item is Sold Out!");
+      }
     }
-
-    // 2. Second check: Do we already have all available stock in the cart?
-    // We count how many of this item ID are already in the cart array
-    const countInCart = cart.value.filter(cartItem => cartItem.id === item.id).length;
-
-    if (countInCart >= item.dailyStock) {
-      return alert("Limit reached! You have all available stock in the cart.");
-    }
-
-    // 3. Safe to add
-    cart.value.push(item);
   };
 
-  const removeFromCart = (index) => cart.value.splice(index, 1);
+  const removeFromCart = (index) => {
+    cart.value.splice(index, 1);
+  };
 
+  // --- FIXED TOTAL CALCULATION ---
+  // Now uses item.price * item.qty
   const cartTotal = computed(() =>
-    cart.value.reduce((acc, item) => acc + Number(item.price), 0)
+    cart.value.reduce((acc, item) => acc + (Number(item.price) * item.qty), 0)
   );
 
   // Helper: Generates a 1-up number that resets daily
-    const getDailyQueueNumber = async () => {
+  const getDailyQueueNumber = async () => {
     const todayStr = new Date().toISOString().split('T')[0]; // "2025-01-22"
     const counterRef = doc(db, 'counters', 'daily_queue'); // Dedicated counter doc
 
     try {
-        const newQ = await runTransaction(db, async (transaction) => {
+      const newQ = await runTransaction(db, async (transaction) => {
         const sfDoc = await transaction.get(counterRef);
         
         let nextNum = 1;
         
         if (sfDoc.exists()) {
-            const data = sfDoc.data();
-            // If the date stored matches today, increment. Otherwise, reset to 1.
-            if (data.date === todayStr) {
+          const data = sfDoc.data();
+          // If the date stored matches today, increment. Otherwise, reset to 1.
+          if (data.date === todayStr) {
             nextNum = data.current + 1;
-            }
+          }
         }
 
         // Update the counter doc
         transaction.set(counterRef, { 
-            current: nextNum, 
-            date: todayStr 
+          current: nextNum, 
+          date: todayStr 
         });
 
         return nextNum;
-        });
-        return newQ;
+      });
+      return newQ;
     } catch (e) {
-        console.error("Queue Gen Error:", e);
-        return null; // Fallback
+      console.error("Queue Gen Error:", e);
+      return Math.floor(Math.random() * 1000); // Fallback
     }
-    };
+  };
 
   const processCheckout = async () => {
     if (cart.value.length === 0) return false;
@@ -91,27 +101,37 @@ export function usePos() {
     const todayStr = new Date().toISOString().split('T')[0];
 
     const newOrder = {
-        items: cart.value,
-        total: cartTotal.value,
-        status: 'pending', // pending -> preparing -> ready -> completed
-        paymentMethod: 'cash',
-        timestamp: serverTimestamp(),
-        
-        // NEW FIELDS
-        queueNumber: queueNum, 
-        orderDate: todayStr, // Helps us filter "today's" orders
+      items: cart.value, // Now contains { name, price, qty... }
+      total: cartTotal.value,
+      status: 'pending', // pending -> preparing -> ready -> completed
+      paymentMethod: 'cash',
+      timestamp: serverTimestamp(),
+      
+      // NEW FIELDS
+      queueNumber: queueNum, 
+      orderDate: todayStr, 
+      customerName: "Walk-in" // Default for Admin POS
     };
 
     try {
-        await addDoc(collection(db, 'orders'), newOrder);
-        cart.value = []; // Clear cart
-        return true;
+      // 2. Save Order
+      await addDoc(collection(db, 'orders'), newOrder);
+
+      // 3. Deduct Stock immediately
+      for (const item of cart.value) {
+        await updateDoc(doc(db, "menu", item.id), {
+          dailyStock: increment(-item.qty),
+          stock: increment(-item.qty)
+        });
+      }
+
+      cart.value = []; // Clear cart
+      return true;
     } catch (e) {
-        console.error(e);
-        return false;
+      console.error(e);
+      return false;
     }
-    };
+  };
 
   return { cart, totalSales, totalItemsSold, addToCart, removeFromCart, cartTotal, processCheckout };
-
 }

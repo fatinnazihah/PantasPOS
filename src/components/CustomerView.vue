@@ -86,6 +86,7 @@
               :src="item.imageUrl"
               class="w-full h-full object-cover group-hover:scale-110 transition duration-700 ease-in-out"
               loading="lazy"
+              decoding="async"
             />
             <div
               v-else
