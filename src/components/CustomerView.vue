@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen pb-24 relative text-slate-700 font-sans selection:bg-rose-200"
+    class="min-h-screen pb-32 relative text-slate-700 font-sans selection:bg-rose-200"
   >
     <div
       class="fixed top-[-10%] left-[-10%] w-96 h-96 bg-[#FEF9C3] rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob -z-10"
@@ -85,6 +85,7 @@
               v-if="item.imageUrl"
               :src="item.imageUrl"
               class="w-full h-full object-cover group-hover:scale-110 transition duration-700 ease-in-out"
+              loading="lazy"
             />
             <div
               v-else
@@ -96,6 +97,12 @@
               class="absolute bottom-2 right-2 md:bottom-4 md:right-4 bg-white/95 backdrop-blur text-[#800020] px-3 py-1 md:px-4 md:py-2 rounded-full font-black shadow-lg text-xs md:text-sm border border-rose-100"
             >
               RM {{ item.price }}
+            </div>
+            <div
+              v-if="getItemQtyInCart(item.id) > 0"
+              class="absolute top-2 right-2 bg-[#800020] text-white w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-md animate-bounce"
+            >
+              {{ getItemQtyInCart(item.id) }}
             </div>
           </div>
 
@@ -124,15 +131,40 @@
 
               <button
                 v-if="item.dailyStock > 0"
-                @click.stop="openReservation(item)"
+                @click.stop="addToCart(item)"
                 class="w-full md:w-auto bg-[#800020] text-white px-4 py-2 rounded-xl text-[10px] md:text-xs font-bold shadow-lg shadow-rose-200 hover:bg-[#630330] hover:scale-105 active:scale-95 transition-all"
               >
-                Reserve
+                Add +
               </button>
             </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="fixed bottom-8 left-8 z-50 group flex items-center gap-3">
+      <a
+        href="https://wa.me/60102847208"
+        target="_blank"
+        class="bg-[#25D366] text-white w-14 h-14 rounded-full font-bold shadow-xl shadow-green-900/20 flex items-center justify-center hover:scale-110 transition active:scale-95 border-4 border-white/50 backdrop-blur-sm"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="28"
+          height="28"
+          fill="currentColor"
+          viewBox="0 0 16 16"
+        >
+          <path
+            d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"
+          />
+        </svg>
+      </a>
+      <span
+        class="bg-white text-slate-600 text-xs font-bold px-3 py-2 rounded-xl shadow-lg border border-slate-100 transition-all opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 pointer-events-none"
+      >
+        Need Help?
+      </span>
     </div>
 
     <button
@@ -149,19 +181,40 @@
       </div>
     </button>
 
-    <button
-      @click="showFeedbackModal = true"
-      class="fixed bottom-8 right-8 bg-[#800020] text-white pl-6 pr-8 py-4 rounded-full font-bold shadow-2xl shadow-rose-900/30 flex items-center gap-3 hover:scale-105 transition active:scale-95 z-50 border-4 border-white/30 backdrop-blur-sm group"
+    <div v-if="cart.length > 0">
+      <button
+        @click="showCartModal = true"
+        class="fixed bottom-8 right-8 bg-[#800020] text-white pl-6 pr-8 py-4 rounded-full font-bold shadow-2xl shadow-rose-900/30 flex items-center gap-3 hover:scale-105 transition active:scale-95 z-50 border-4 border-white/30 backdrop-blur-sm group animate-slide-up"
+      >
+        <span class="text-2xl">🛍️</span>
+        <div class="text-left leading-none">
+          <span
+            class="block text-[10px] opacity-80 uppercase tracking-wider font-bold"
+            >{{ cartItemsCount }} Items</span
+          >
+          <span class="text-sm">RM {{ cartTotal }}</span>
+        </div>
+      </button>
+    </div>
+
+    <div
+      v-else
+      class="fixed bottom-8 right-8 z-50 group flex flex-col items-end gap-2"
     >
-      <span class="text-2xl group-hover:rotate-12 transition">💌</span>
-      <div class="text-left leading-none">
-        <span
-          class="block text-[10px] opacity-80 uppercase tracking-wider font-bold"
-          >Customer</span
-        >
-        <span class="text-sm">Reviews</span>
-      </div>
-    </button>
+      <button
+        @click="showFeedbackModal = true"
+        class="bg-[#800020] text-white pl-6 pr-8 py-4 rounded-full font-bold shadow-2xl shadow-rose-900/30 flex items-center gap-3 hover:scale-105 transition active:scale-95 border-4 border-white/30 backdrop-blur-sm"
+      >
+        <span class="text-2xl group-hover:rotate-12 transition">💌</span>
+        <div class="text-left leading-none">
+          <span
+            class="block text-[10px] opacity-80 uppercase tracking-wider font-bold"
+            >Customer</span
+          >
+          <span class="text-sm">Reviews</span>
+        </div>
+      </button>
+    </div>
 
     <div
       v-if="showTracker"
@@ -169,6 +222,238 @@
       @click.self="showTracker = false"
     >
       <OrderTracker @close="showTracker = false" />
+    </div>
+
+    <div
+      v-if="showDetailsModal"
+      class="fixed inset-0 bg-[#800020]/20 backdrop-blur-sm flex items-center justify-center p-6 z-50 transition-opacity"
+      @click.self="showDetailsModal = false"
+    >
+      <div
+        class="bg-white rounded-[2.5rem] w-full max-w-sm shadow-2xl border-4 border-white transform transition-all scale-100 animate-slide-up overflow-hidden"
+      >
+        <div v-if="selectedItem?.imageUrl" class="relative h-64 bg-[#FEF9C3]">
+          <img
+            :src="selectedItem.imageUrl"
+            class="w-full h-full object-cover"
+          />
+          <button
+            @click="showDetailsModal = false"
+            class="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full text-slate-500 font-bold hover:text-red-500 flex items-center justify-center shadow-lg transition"
+          >
+            ✕
+          </button>
+        </div>
+        <div v-else class="flex justify-end p-4 pb-0">
+          <button
+            @click="showDetailsModal = false"
+            class="w-10 h-10 bg-slate-100 rounded-full text-slate-500 font-bold hover:text-red-500 flex items-center justify-center transition"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="p-8 pt-6">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3
+                class="font-['Playfair_Display'] font-bold text-3xl text-[#800020] leading-tight"
+              >
+                {{ selectedItem?.name }}
+              </h3>
+              <span
+                class="text-xs font-bold text-slate-400 uppercase tracking-widest"
+              >
+                {{ selectedItem?.category }}
+              </span>
+            </div>
+            <div
+              class="bg-rose-50 text-[#800020] px-3 py-1 rounded-xl font-black text-sm"
+            >
+              RM {{ selectedItem?.price }}
+            </div>
+          </div>
+
+          <p class="text-slate-600 text-sm leading-relaxed mb-6 font-medium">
+            {{
+              selectedItem?.description ||
+              "Delicious homemade goodness baked with love."
+            }}
+          </p>
+
+          <div class="flex gap-3">
+            <button
+              v-if="selectedItem?.dailyStock > 0"
+              @click="
+                showDetailsModal = false;
+                addToCart(selectedItem);
+              "
+              class="flex-1 bg-[#800020] text-white py-4 rounded-2xl font-bold shadow-lg shadow-rose-200 hover:bg-[#630330] transition active:scale-95"
+            >
+              Add to Cart
+            </button>
+            <button
+              v-else
+              disabled
+              class="flex-1 bg-slate-100 text-slate-400 py-4 rounded-2xl font-bold cursor-not-allowed"
+            >
+              Sold Out
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="showCartModal"
+      class="fixed inset-0 bg-[#800020]/20 backdrop-blur-sm flex items-center justify-center p-6 z-50 transition-opacity"
+    >
+      <div
+        class="bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl border-4 border-white transform transition-all scale-100 animate-slide-up flex flex-col max-h-[80vh]"
+      >
+        <div class="flex justify-between items-center mb-6">
+          <h3
+            class="font-['Playfair_Display'] font-bold text-2xl text-[#800020]"
+          >
+            Your Cart
+          </h3>
+          <button
+            @click="showCartModal = false"
+            class="w-8 h-8 bg-slate-100 rounded-full text-slate-400 font-bold hover:bg-slate-200"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="overflow-y-auto flex-1 mb-6 pr-1 space-y-3">
+          <div
+            v-for="(item, index) in cart"
+            :key="index"
+            class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl"
+          >
+            <div>
+              <p class="font-bold text-slate-700 leading-tight">
+                {{ item.name }}
+              </p>
+              <p class="text-xs text-slate-400">RM {{ item.price }}</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="font-black text-[#800020]">x{{ item.qty }}</span>
+              <button
+                @click="removeFromCart(index)"
+                class="text-red-400 font-bold hover:text-red-600 px-2"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3 border-t border-slate-100 pt-4">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-sm font-bold text-slate-400 uppercase"
+              >Total</span
+            >
+            <span class="text-2xl font-black text-[#800020]"
+              >RM {{ cartTotal }}</span
+            >
+          </div>
+
+          <input
+            v-model="customerName"
+            placeholder="Enter Your Name"
+            class="w-full bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-[#800020]/20 font-bold text-slate-700 text-center"
+          />
+
+          <button
+            @click="confirmOrder"
+            class="w-full bg-[#800020] text-white py-4 rounded-2xl font-bold shadow-lg shadow-rose-200 hover:bg-[#630330] transition active:scale-95"
+          >
+            Confirm Order
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="showSuccessModal"
+      class="fixed inset-0 bg-[#800020]/90 backdrop-blur-md flex items-center justify-center p-6 z-[60] animate-slide-up"
+    >
+      <div
+        class="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl relative overflow-hidden"
+      >
+        <div
+          class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-rose-200 via-rose-400 to-rose-200"
+        ></div>
+
+        <div class="text-6xl mb-4 animate-bounce">🎫</div>
+        <h3
+          class="font-['Playfair_Display'] font-bold text-3xl text-[#800020] mb-2"
+        >
+          Order Sent!
+        </h3>
+
+        <div
+          class="bg-rose-50 rounded-2xl p-4 mb-6 text-sm text-rose-900 leading-relaxed"
+        >
+          <p class="font-bold mb-1">Please pay & pickup at counter.</p>
+          <p class="text-xs opacity-80">We accept:</p>
+          <div
+            class="flex justify-center gap-2 mt-2 font-bold text-[10px] uppercase tracking-wide text-rose-700"
+          >
+            <span
+              class="bg-white px-2 py-1 rounded border border-rose-100 shadow-sm"
+              >💵 Cash</span
+            >
+            <span
+              class="bg-white px-2 py-1 rounded border border-rose-100 shadow-sm"
+              >📲 DuitNow</span
+            >
+            <span
+              class="bg-white px-2 py-1 rounded border border-rose-100 shadow-sm"
+              >💳 TnG</span
+            >
+          </div>
+        </div>
+
+        <div
+          class="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-6 mb-6 relative"
+        >
+          <div
+            class="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#800020] rounded-full"
+          ></div>
+          <div
+            class="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#800020] rounded-full"
+          ></div>
+
+          <div
+            class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1"
+          >
+            Queue Number
+          </div>
+          <div class="text-6xl font-black text-slate-800 tracking-tighter">
+            #{{ lastOrderDetails.queue }}
+          </div>
+
+          <div class="w-full h-px bg-slate-100 my-4"></div>
+
+          <div
+            class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1"
+          >
+            Name
+          </div>
+          <div class="text-xl font-bold text-[#800020]">
+            {{ lastOrderDetails.name }}
+          </div>
+        </div>
+
+        <button
+          @click="showSuccessModal = false"
+          class="w-full bg-[#800020] text-white py-4 rounded-2xl font-bold shadow-lg shadow-rose-200 active:scale-95 transition hover:bg-[#630330]"
+        >
+          Got it!
+        </button>
+      </div>
     </div>
 
     <div
@@ -372,150 +657,6 @@
         </div>
       </div>
     </div>
-
-    <div
-      v-if="showDetailsModal"
-      class="fixed inset-0 bg-[#800020]/20 backdrop-blur-sm flex items-center justify-center p-6 z-50 transition-opacity"
-      @click.self="showDetailsModal = false"
-    >
-      <div
-        class="bg-white rounded-[2.5rem] w-full max-w-sm shadow-2xl border-4 border-white transform transition-all scale-100 animate-slide-up overflow-hidden"
-      >
-        <div v-if="selectedItem?.imageUrl" class="relative h-64 bg-[#FEF9C3]">
-          <img
-            :src="selectedItem.imageUrl"
-            class="w-full h-full object-cover"
-          />
-          <button
-            @click="showDetailsModal = false"
-            class="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full text-slate-500 font-bold hover:text-red-500 flex items-center justify-center shadow-lg transition"
-          >
-            ✕
-          </button>
-        </div>
-        <div v-else class="flex justify-end p-4 pb-0">
-          <button
-            @click="showDetailsModal = false"
-            class="w-10 h-10 bg-slate-100 rounded-full text-slate-500 font-bold hover:text-red-500 flex items-center justify-center transition"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div class="p-8 pt-6">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <h3
-                class="font-['Playfair_Display'] font-bold text-3xl text-[#800020] leading-tight"
-              >
-                {{ selectedItem?.name }}
-              </h3>
-              <span
-                class="text-xs font-bold text-slate-400 uppercase tracking-widest"
-              >
-                {{ selectedItem?.category }}
-              </span>
-            </div>
-            <div
-              class="bg-rose-50 text-[#800020] px-3 py-1 rounded-xl font-black text-sm"
-            >
-              RM {{ selectedItem?.price }}
-            </div>
-          </div>
-
-          <p class="text-slate-600 text-sm leading-relaxed mb-6 font-medium">
-            {{
-              selectedItem?.description ||
-              "Delicious homemade goodness baked with love."
-            }}
-          </p>
-
-          <div class="flex gap-3">
-            <button
-              @click="
-                showDetailsModal = false;
-                openReservation(selectedItem);
-              "
-              class="flex-1 bg-[#800020] text-white py-4 rounded-2xl font-bold shadow-lg shadow-rose-200 hover:bg-[#630330] transition active:scale-95"
-            >
-              Reserve Now
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div
-      v-if="showModal"
-      class="fixed inset-0 bg-[#800020]/20 backdrop-blur-sm flex items-center justify-center p-6 z-50 transition-opacity"
-    >
-      <div
-        class="bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl border-4 border-white transform transition-all scale-100 animate-slide-up"
-      >
-        <h3
-          class="font-['Playfair_Display'] font-bold text-2xl mb-1 text-[#800020]"
-        >
-          Reserve it.
-        </h3>
-        <p
-          class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6"
-        >
-          Confirm via WhatsApp
-        </p>
-        <div
-          class="bg-[#FEF9C3]/50 border border-[#FEF9C3] p-4 rounded-2xl mb-6 flex items-center gap-4"
-        >
-          <div
-            class="w-14 h-14 bg-white rounded-xl flex items-center justify-center text-2xl shadow-sm"
-          >
-            🧁
-          </div>
-          <div>
-            <p class="font-bold text-slate-800 text-lg leading-none mb-1">
-              {{ selectedItem?.name }}
-            </p>
-            <p class="text-xs font-bold text-slate-500">
-              RM {{ selectedItem?.price }} / unit
-            </p>
-          </div>
-        </div>
-        <div class="space-y-3">
-          <input
-            v-model="reservation.customerName"
-            placeholder="Your Name"
-            class="w-full bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-[#800020]/20 font-bold text-slate-700"
-          />
-          <div class="flex items-center gap-3">
-            <div
-              class="bg-slate-50 p-4 rounded-2xl flex-1 text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center"
-            >
-              Quantity needed:
-            </div>
-            <input
-              type="number"
-              v-model="reservation.qty"
-              min="1"
-              :max="selectedItem?.dailyStock"
-              class="w-24 bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-[#800020]/20 font-black text-center text-xl text-[#800020]"
-            />
-          </div>
-        </div>
-        <div class="flex gap-3 mt-8">
-          <button
-            @click="showModal = false"
-            class="flex-1 py-4 rounded-2xl font-bold text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition"
-          >
-            Cancel
-          </button>
-          <button
-            @click="confirmReservation"
-            class="flex-1 bg-[#800020] text-white py-4 rounded-2xl font-bold shadow-lg shadow-rose-200 hover:bg-[#630330] transition"
-          >
-            Confirm
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -533,6 +674,7 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  runTransaction,
 } from "firebase/firestore";
 import {
   ref as storageRef,
@@ -547,17 +689,22 @@ const selectedCategory = ref("All");
 const showTracker = ref(false);
 
 // Modals & Tabs
-const showModal = ref(false);
 const showFeedbackModal = ref(false);
-const showDetailsModal = ref(false); // NEW
+const showDetailsModal = ref(false);
+const showCartModal = ref(false);
+const showSuccessModal = ref(false);
 const feedbackTab = ref("read");
+
+// Cart Logic
+const cart = ref([]);
+const customerName = ref("");
 
 // Forms
 const selectedItem = ref(null);
 const uploading = ref(false);
 const feedbackFile = ref(null);
-const feedback = ref({ name: "", message: "", avatar: "👤" }); // Default Avatar
-const reservation = ref({ customerName: "", qty: 1 });
+const feedback = ref({ name: "", message: "", avatar: "👤" });
+const lastOrderDetails = ref({ queue: null, name: "" });
 
 // Avatars List
 const avatars = [
@@ -575,11 +722,9 @@ const avatars = [
   "🐸",
 ];
 
-// Tracking Liked Posts (Session-based)
 const likedPosts = ref(new Set());
 
 onMounted(() => {
-  // 1. Load Menu
   onSnapshot(collection(db, "menu"), (snapshot) => {
     menuItems.value = snapshot.docs.map((doc) => ({
       id: doc.id,
@@ -587,13 +732,11 @@ onMounted(() => {
     }));
   });
 
-  // 2. Load Categories
   const catQuery = query(collection(db, "categories"), orderBy("name", "asc"));
   onSnapshot(catQuery, (snap) => {
     categories.value = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   });
 
-  // 3. Load Reviews
   const fbQuery = query(
     collection(db, "feedback"),
     orderBy("timestamp", "desc"),
@@ -610,35 +753,112 @@ const filteredMenu = computed(() => {
   );
 });
 
-// NEW: Open Details
+// --- CART LOGIC ---
+
+const addToCart = (item) => {
+  const existing = cart.value.find((i) => i.id === item.id);
+  if (existing) {
+    if (existing.qty < item.dailyStock) {
+      existing.qty++;
+    } else {
+      alert("Max stock reached for this item!");
+    }
+  } else {
+    cart.value.push({ ...item, qty: 1 });
+  }
+};
+
+const removeFromCart = (index) => {
+  cart.value.splice(index, 1);
+};
+
+const getItemQtyInCart = (id) => {
+  const item = cart.value.find((i) => i.id === id);
+  return item ? item.qty : 0;
+};
+
+const cartTotal = computed(() =>
+  cart.value.reduce((acc, item) => acc + item.price * item.qty, 0),
+);
+
+const cartItemsCount = computed(() =>
+  cart.value.reduce((acc, item) => acc + item.qty, 0),
+);
+
+// Open details (simplified)
 const openDetails = (item) => {
   selectedItem.value = item;
   showDetailsModal.value = true;
 };
 
-const openReservation = (item) => {
-  selectedItem.value = item;
-  reservation.value.qty = 1;
-  showModal.value = true;
+// --- QUEUE & ORDER ---
+
+const getDailyQueueNumber = async () => {
+  const todayStr = new Date().toISOString().split("T")[0];
+  const counterRef = doc(db, "counters", "daily_queue");
+
+  try {
+    const newQ = await runTransaction(db, async (transaction) => {
+      const sfDoc = await transaction.get(counterRef);
+      let nextNum = 1;
+
+      if (sfDoc.exists()) {
+        const data = sfDoc.data();
+        if (data.date === todayStr) {
+          nextNum = data.current + 1;
+        }
+      }
+
+      transaction.set(counterRef, {
+        current: nextNum,
+        date: todayStr,
+      });
+
+      return nextNum;
+    });
+    return newQ;
+  } catch (e) {
+    console.error("Queue Error:", e);
+    return Math.floor(Math.random() * 1000);
+  }
 };
 
-const confirmReservation = async () => {
-  if (!reservation.value.customerName) return alert("Please enter your name");
+const confirmOrder = async () => {
+  if (!customerName.value) return alert("Please enter your name");
+  if (cart.value.length === 0) return alert("Cart is empty");
 
-  await addDoc(collection(db, "reservations"), {
-    ...reservation.value,
-    item: selectedItem.value.name,
+  const queueNum = await getDailyQueueNumber();
+
+  await addDoc(collection(db, "orders"), {
+    customerName: customerName.value,
+    items: cart.value, // Sends the whole cart array
+    total: cartTotal.value,
     status: "pending",
+    paymentMethod: "counter",
+    queueNumber: queueNum,
+    orderDate: new Date().toISOString().split("T")[0],
     timestamp: serverTimestamp(),
   });
 
-  const phone = "60102847208";
-  const text = `Hi! My name is ${reservation.value.customerName}. I'd like to reserve ${reservation.value.qty}x ${selectedItem.value.name}.`;
-  window.location.href = `https://wa.me/${phone}?text=${encodeURIComponent(
-    text,
-  )}`;
+  localStorage.setItem("pantas_active_queue", queueNum);
+  localStorage.setItem(
+    "pantas_order_date",
+    new Date().toISOString().split("T")[0],
+  );
+
+  lastOrderDetails.value = {
+    queue: queueNum,
+    name: customerName.value,
+  };
+
+  // Reset
+  cart.value = [];
+  customerName.value = "";
+  showCartModal.value = false;
+  showSuccessModal.value = true;
 };
 
+// --- FEEDBACK & UPLOAD ---
 const handleFileUpload = (e) => {
   feedbackFile.value = e.target.files[0];
 };
