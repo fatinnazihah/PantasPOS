@@ -4,7 +4,7 @@ import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics"; // Optional: if you use analytics
 
-// --- LOAD KEYS FROM .ENV FILE ---
+// LOAD KEYS FROM .ENV FILE
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_API_KEY,
   authDomain: import.meta.env.VITE_AUTH_DOMAIN,
